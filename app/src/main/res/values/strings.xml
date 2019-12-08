@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Pult</string>
+    <string name="refresh">Refresh</string>
+    <string name="selection_header">Select device from list</string>
+</resources>
