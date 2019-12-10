@@ -14,7 +14,7 @@ import org.jetbrains.anko.toast
 
 class SelectDeviceActivity : AppCompatActivity() {
 
-    private var btAdapter: BluetoothAdapter? = null
+    private var m_bluetoothAdapter: BluetoothAdapter? = null
     private lateinit var pairedDevices: Set<BluetoothDevice>
     private val REQUEST_ENABLE_BLUETOOTH = 1
 
@@ -26,26 +26,32 @@ class SelectDeviceActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.select_device_layout)
 
-        btAdapter = BluetoothAdapter.getDefaultAdapter()
-        if (btAdapter == null) {
+        m_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+
+        if (m_bluetoothAdapter == null) {
             toast("This device doesn't support bluetooth")
             return
         }
-        if (!btAdapter!!.isEnabled) {
+        if (!m_bluetoothAdapter!!.isEnabled) {
+
+            //request enable bluetooth
             val enableBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BLUETOOTH)
         }
 
+        //on refresh button click
         selection_device_refresh.setOnClickListener {
+
+            //update list of paired devices
             pairedDeviceList()
         }
     }
 
     private fun pairedDeviceList() {
-        pairedDevices = btAdapter!!.bondedDevices
+        pairedDevices = m_bluetoothAdapter!!.bondedDevices
         val list: ArrayList<BluetoothDevice> = ArrayList()
 
-        if (!pairedDevices.isEmpty()) {
+        if (pairedDevices.isNotEmpty()) {
             for (device: BluetoothDevice in pairedDevices) {
                 list.add(device)
                 Log.i("device", "" + device)
@@ -59,10 +65,10 @@ class SelectDeviceActivity : AppCompatActivity() {
         selection_device_list.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
                 val device: BluetoothDevice = list[position]
-                val adress: String = device.address
+                val address: String = device.address
 
                 val intent = Intent(this, ControlActivity::class.java)
-                intent.putExtra(EXTRA_ADRESS, adress)
+                intent.putExtra(EXTRA_ADRESS, address)
                 startActivity(intent)
             }
     }
@@ -71,7 +77,7 @@ class SelectDeviceActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
             if (resultCode == Activity.RESULT_OK) {
-                if (btAdapter!!.isEnabled) {
+                if (m_bluetoothAdapter!!.isEnabled) {
                     toast("Bluetooth has been enabled")
                 } else {
                     toast("Bluetooth has been disabled")

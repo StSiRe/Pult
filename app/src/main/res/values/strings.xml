@@ -2,4 +2,7 @@
     <string name="app_name">Pult</string>
     <string name="refresh">Refresh</string>
     <string name="selection_header">Select device from list</string>
+    <string name="send_zero">Send 0</string>
+    <string name="send_one">Send 1</string>
+    <string name="disconnect">Disconnect</string>
 </resources>
