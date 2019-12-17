@@ -33,6 +33,10 @@ class ControlActivity : AppCompatActivity() {
 
         ConnectToDevice(this).execute()
 
+        if(!isConnected){
+            disconnect()
+        }
+
         sendOneButton.setOnClickListener { sendCommand("1") }
         sendZeroButton.setOnClickListener { sendCommand("0") }
         disconnectButton.setOnClickListener { disconnect() }
