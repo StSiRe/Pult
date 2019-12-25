@@ -10,6 +10,7 @@ import android.content.Context
 import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.control_layout.*
 import java.io.IOException
@@ -33,10 +34,6 @@ class ControlActivity : AppCompatActivity() {
 
         ConnectToDevice(this).execute()
 
-        if(!isConnected){
-            disconnect()
-        }
-
         sendOneButton.setOnClickListener { sendCommand("1") }
         sendZeroButton.setOnClickListener { sendCommand("0") }
         disconnectButton.setOnClickListener { disconnect() }
@@ -46,13 +43,17 @@ class ControlActivity : AppCompatActivity() {
         if (m_bluetoothSocket != null) {
             try {
                 m_bluetoothSocket!!.outputStream.write(input.toByteArray())
+                Log.i("Send command", "successfully sent $input")
             } catch (e: IOException) {
                 e.printStackTrace()
             }
+        } else {
+            Log.i("Send command", "Couldn't send a command: socket is null")
         }
     }
 
     private fun disconnect() {
+        sendCommand("${'0' - 1}")
         if (m_bluetoothSocket != null) {
             try {
                 m_bluetoothSocket!!.close()
@@ -65,7 +66,7 @@ class ControlActivity : AppCompatActivity() {
         finish()
     }
 
-    private class ConnectToDevice(c: Context) : AsyncTask<Void, Void, String>() {
+    inner class ConnectToDevice(c: Context) : AsyncTask<Void, Void, String>() {
 
         private var connectSuccess: Boolean = true
         private val context: Context
@@ -80,17 +81,19 @@ class ControlActivity : AppCompatActivity() {
         }
 
         override fun doInBackground(vararg params: Void?): String? {
-            try {
-                if (m_bluetoothSocket == null || !isConnected) {
-                    m_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-                    val device: BluetoothDevice = m_bluetoothAdapter.getRemoteDevice(address)
-                    m_bluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(myUUID)
-                    BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
+            while (m_bluetoothSocket == null || !m_bluetoothSocket!!.isConnected) {
+                m_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+                try {
+                    val device = m_bluetoothAdapter.getRemoteDevice(address)
+                    m_bluetoothSocket =
+                        device!!.createInsecureRfcommSocketToServiceRecord(myUUID)
+                    m_bluetoothAdapter.cancelDiscovery()
                     m_bluetoothSocket!!.connect()
+                    connectSuccess = true
+                } catch (e: IOException) {
+                    connectSuccess = false
+                    Log.i("Pult_debug", "Couldn't connect")
                 }
-            } catch (e: IOException) {
-                connectSuccess = false
-                e.printStackTrace()
             }
             return null
         }
@@ -98,9 +101,12 @@ class ControlActivity : AppCompatActivity() {
         override fun onPostExecute(result: String?) {
             super.onPostExecute(result)
             if (!connectSuccess) {
-                Log.i("data", "couldn't connect")
+                Log.i("Pult_debug", "Couldn't connect")
+                disconnect()
+                Toast.makeText(context, "Couldn't connect", Toast.LENGTH_LONG).show()
             } else {
                 isConnected = true
+                Toast.makeText(context, "Connected", Toast.LENGTH_LONG).show()
             }
             progress.dismiss()
         }

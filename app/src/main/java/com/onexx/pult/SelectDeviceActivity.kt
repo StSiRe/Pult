@@ -9,8 +9,9 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import kotlinx.android.synthetic.main.select_device_layout.*
-import org.jetbrains.anko.toast
+
 
 class SelectDeviceActivity : AppCompatActivity() {
 
@@ -29,7 +30,7 @@ class SelectDeviceActivity : AppCompatActivity() {
         m_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
         if (m_bluetoothAdapter == null) {
-            toast("This device doesn't support bluetooth")
+            Toast.makeText(this, "This device doesn't support bluetooth",Toast.LENGTH_LONG).show()
             return
         }
         if (!m_bluetoothAdapter!!.isEnabled) {
@@ -59,7 +60,7 @@ class SelectDeviceActivity : AppCompatActivity() {
                 Log.i("device", device.name + " - " + device)
             }
         } else {
-            toast("no paired bluetooth devices found")
+            Toast.makeText(this,"no paired bluetooth devices found",Toast.LENGTH_LONG).show()
         }
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, namesList)
@@ -80,12 +81,12 @@ class SelectDeviceActivity : AppCompatActivity() {
         if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
             if (resultCode == Activity.RESULT_OK) {
                 if (m_bluetoothAdapter!!.isEnabled) {
-                    toast("Bluetooth has been enabled")
+                    Toast.makeText(this,"Bluetooth has been enabled",Toast.LENGTH_LONG).show()
                 } else {
-                    toast("Bluetooth has been disabled")
+                    Toast.makeText(this,"Bluetooth has been disabled",Toast.LENGTH_LONG).show()
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
-                toast("Bluetooth enabling has been cancelled")
+                Toast.makeText(this,"Bluetooth enabling has been cancelled",Toast.LENGTH_LONG).show()
             }
         }
     }
