@@ -4,7 +4,6 @@ package com.onexx.pult
 
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.os.AsyncTask
@@ -15,6 +14,12 @@ import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.control_layout.*
 import java.io.IOException
 import java.util.*
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorManager
+import android.hardware.SensorEventListener
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class ControlActivity : AppCompatActivity() {
 
@@ -26,18 +31,95 @@ class ControlActivity : AppCompatActivity() {
         var isConnected: Boolean = false
         lateinit var address: String
     }
+    private var mSensorManager: SensorManager? = null
+    private var mAccelerometer: Sensor? = null
+    private var countBeforeUpdate = 20
+    var xValCur = 0
+    var yValCur = 0
+    var zValCur = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.control_layout)
-        address = intent.getStringExtra(SelectDeviceActivity.EXTRA_ADRESS)!!
+        //address = intent.getStringExtra(SelectDeviceActivity.EXTRA_ADRESS)!!
 
-        ConnectToDevice(this).execute()
+        //ConnectToDevice(this).execute()
 
-        sendOneButton.setOnClickListener { sendCommand("1") }
-        sendZeroButton.setOnClickListener { sendCommand("0") }
-        disconnectButton.setOnClickListener { disconnect() }
+        //sendOneButton.setOnClickListener { sendCommand("1") }
+        //sendZeroButton.setOnClickListener { sendCommand("0") }
+        //disconnectButton.setOnClickListener { disconnect() }
+
+
+        // get reference of the service
+        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        // focus in accelerometer
+        mAccelerometer = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+
+
+
+
+
+        sensorView.text = 1.toString()
+
     }
+    var state = false
+
+    fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        mSensorManager!!.registerListener(this,mAccelerometer,
+            SensorManager.SENSOR_DELAY_GAME)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mSensorManager!!.unregisterListener(this)
+    }
+
+
+    fun onSensorChanged(event: SensorEvent?) {
+
+        if (event != null) {
+            countBeforeUpdate--
+            val xVal = event.values[0].roundToInt()
+            val yVal = event.values[1].roundToInt()
+            val zVal = event.values[2].roundToInt()
+            if (abs(xVal) > abs(xValCur)) {
+                ValueX.text = xVal.toString()
+                xValCur = xVal
+            }
+            if (abs(yVal) > abs(yValCur)) {
+                ValueY.text = yVal.toString()
+                yValCur = yVal
+            }
+            if (abs(zVal) > abs(zValCur)) {
+                ValueZ.text = zVal.toString()
+                zValCur = zVal
+                //if(state)
+                //    sendCommand("Off")
+                //else
+                //    sendCommand("On")
+                sensorView.text = state.toString();
+                state = !state
+
+            }
+            if (countBeforeUpdate == 0) {
+                countBeforeUpdate = 20
+                ValueX.text = "0"
+                ValueY.text = "0"
+                ValueZ.text = "0"
+                xValCur = 0
+                yValCur = 0
+                zValCur = 0
+            }
+        }
+
+    }
+
 
     private fun sendCommand(input: String) {
         if (m_bluetoothSocket != null) {
