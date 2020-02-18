@@ -21,8 +21,8 @@ import android.hardware.SensorEventListener
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class ControlActivity : AppCompatActivity() {
-
+class ControlActivity : AppCompatActivity(),SensorEventListener
+{
     companion object {
         var myUUID: UUID = UUID.fromString("aad0b172-c0a3-4839-9281-6b15deb5d24f")
         var m_bluetoothSocket: BluetoothSocket? = null
@@ -31,14 +31,6 @@ class ControlActivity : AppCompatActivity() {
         var isConnected: Boolean = false
         lateinit var address: String
     }
-    private var mSensorManager: SensorManager? = null
-    private var mAccelerometer: Sensor? = null
-    private var countBeforeUpdate = 20
-    var xValCur = 0
-    var yValCur = 0
-    var zValCur = 0
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.control_layout)
@@ -49,78 +41,12 @@ class ControlActivity : AppCompatActivity() {
         //sendOneButton.setOnClickListener { sendCommand("1") }
         //sendZeroButton.setOnClickListener { sendCommand("0") }
         //disconnectButton.setOnClickListener { disconnect() }
-
-
-        // get reference of the service
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        // focus in accelerometer
-        mAccelerometer = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
-
-
-
-
-
-        sensorView.text = 1.toString()
+                   // focus in accelerometer
+                   mAccelerometer = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+                    sensorView.text = 1.toString()
 
     }
-    var state = false
-
-    fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-    }
-
-
-    override fun onResume() {
-        super.onResume()
-        mSensorManager!!.registerListener(this,mAccelerometer,
-            SensorManager.SENSOR_DELAY_GAME)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mSensorManager!!.unregisterListener(this)
-    }
-
-
-    fun onSensorChanged(event: SensorEvent?) {
-
-        if (event != null) {
-            countBeforeUpdate--
-            val xVal = event.values[0].roundToInt()
-            val yVal = event.values[1].roundToInt()
-            val zVal = event.values[2].roundToInt()
-            if (abs(xVal) > abs(xValCur)) {
-                ValueX.text = xVal.toString()
-                xValCur = xVal
-            }
-            if (abs(yVal) > abs(yValCur)) {
-                ValueY.text = yVal.toString()
-                yValCur = yVal
-            }
-            if (abs(zVal) > abs(zValCur)) {
-                ValueZ.text = zVal.toString()
-                zValCur = zVal
-                //if(state)
-                //    sendCommand("Off")
-                //else
-                //    sendCommand("On")
-                sensorView.text = state.toString();
-                state = !state
-
-            }
-            if (countBeforeUpdate == 0) {
-                countBeforeUpdate = 20
-                ValueX.text = "0"
-                ValueY.text = "0"
-                ValueZ.text = "0"
-                xValCur = 0
-                yValCur = 0
-                zValCur = 0
-            }
-        }
-
-    }
-
-
     private fun sendCommand(input: String) {
         if (m_bluetoothSocket != null) {
             try {
@@ -193,4 +119,63 @@ class ControlActivity : AppCompatActivity() {
             progress.dismiss()
         }
     }
-}
+
+        private var mSensorManager: SensorManager? = null
+        private var mAccelerometer: Sensor? = null
+        private var countBeforeUpdate = 20
+        var xValCur = 0
+        var yValCur = 0
+        var zValCur = 0
+
+        override fun onResume() {
+            super.onResume()
+            mSensorManager!!.registerListener(
+                this,
+                this.mAccelerometer,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+            // repeat that line for each sensor you want to monitor
+        }
+
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        }
+        var state:Boolean = false
+        override fun onSensorChanged(event: SensorEvent?) {
+
+            if (event != null) {
+                countBeforeUpdate--
+                val xVal = event.values[0].roundToInt()
+                val yVal = event.values[1].roundToInt()
+                val zVal = event.values[2].roundToInt()
+                if (abs(xVal) > abs(xValCur)) {
+                    ValueX.text = xVal.toString()
+                    xValCur = xVal
+                }
+                if (abs(yVal) > abs(yValCur)) {
+                    ValueY.text = yVal.toString()
+                    yValCur = yVal
+                }
+                if (abs(zVal) > abs(zValCur)) {
+                    ValueZ.text = zVal.toString()
+                    zValCur = zVal
+                    if(state)
+                        sensorView.text = "On"
+                    else
+                        sensorView.text = "Off"
+                    state = !state
+                }
+                if (countBeforeUpdate == 0) {
+                    countBeforeUpdate = 20
+                    ValueX.text = "0"
+                    ValueY.text = "0"
+                    ValueZ.text = "0"
+                    xValCur = 0
+                    yValCur = 0
+                    zValCur = 0
+                    sensorView.text = "NaN"
+                }
+            }
+
+        }
+    }
