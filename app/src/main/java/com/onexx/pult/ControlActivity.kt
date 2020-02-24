@@ -21,8 +21,7 @@ import android.hardware.SensorEventListener
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class ControlActivity : AppCompatActivity(),SensorEventListener
-{
+class ControlActivity : AppCompatActivity(), SensorEventListener {
     companion object {
         var myUUID: UUID = UUID.fromString("aad0b172-c0a3-4839-9281-6b15deb5d24f")
         var m_bluetoothSocket: BluetoothSocket? = null
@@ -31,22 +30,24 @@ class ControlActivity : AppCompatActivity(),SensorEventListener
         var isConnected: Boolean = false
         lateinit var address: String
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.control_layout)
-        //address = intent.getStringExtra(SelectDeviceActivity.EXTRA_ADRESS)!!
+        //TODO Uncomment and test bluetooth connection
+        address = intent.getStringExtra(SelectDeviceActivity.EXTRA_ADRESS)!!
 
-        //ConnectToDevice(this).execute()
+        ConnectToDevice(this).execute()
 
-        //sendOneButton.setOnClickListener { sendCommand("1") }
-        //sendZeroButton.setOnClickListener { sendCommand("0") }
-        //disconnectButton.setOnClickListener { disconnect() }
+        sendOneButton.setOnClickListener { sendCommand("1") }
+        sendZeroButton.setOnClickListener { sendCommand("0") }
+        disconnectButton.setOnClickListener { disconnect() }
+
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-                   // focus in accelerometer
-                   mAccelerometer = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
-                    sensorView.text = 1.toString()
-
+        mAccelerometer = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        sensorView.text = 1.toString()
     }
+
     private fun sendCommand(input: String) {
         if (m_bluetoothSocket != null) {
             try {
@@ -120,62 +121,71 @@ class ControlActivity : AppCompatActivity(),SensorEventListener
         }
     }
 
-        private var mSensorManager: SensorManager? = null
-        private var mAccelerometer: Sensor? = null
-        private var countBeforeUpdate = 20
-        var xValCur = 0
-        var yValCur = 0
-        var zValCur = 0
+    private var mSensorManager: SensorManager? = null
+    private var mAccelerometer: Sensor? = null
+    private val delay = 20
+    private val gestureMinValue = 7
+    private var stateValues = SensorValues(0, 0, 0)
+    private var countBeforeUpdate = delay
 
-        override fun onResume() {
-            super.onResume()
-            mSensorManager!!.registerListener(
-                this,
-                this.mAccelerometer,
-                SensorManager.SENSOR_DELAY_NORMAL
-            )
-            // repeat that line for each sensor you want to monitor
-        }
-
-
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        }
-        var state:Boolean = false
-        override fun onSensorChanged(event: SensorEvent?) {
-
-            if (event != null) {
-                countBeforeUpdate--
-                val xVal = event.values[0].roundToInt()
-                val yVal = event.values[1].roundToInt()
-                val zVal = event.values[2].roundToInt()
-                if (abs(xVal) > abs(xValCur)) {
-                    ValueX.text = xVal.toString()
-                    xValCur = xVal
-                }
-                if (abs(yVal) > abs(yValCur)) {
-                    ValueY.text = yVal.toString()
-                    yValCur = yVal
-                }
-                if (abs(zVal) > abs(zValCur)) {
-                    ValueZ.text = zVal.toString()
-                    zValCur = zVal
-                    if(state)
-                        sensorView.text = "On"
-                    else
-                        sensorView.text = "Off"
-                    state = !state
-                }
-                if (countBeforeUpdate == 0) {
-                    countBeforeUpdate = 20
-                    ValueX.text = "0"
-                    ValueY.text = "0"
-                    ValueZ.text = "0"
-                    xValCur = 0
-                    yValCur = 0
-                    zValCur = 0
-                    sensorView.text = "NaN"
-                }
-            }
-
-        }
+    override fun onResume() {
+        super.onResume()
+        mSensorManager!!.registerListener(
+            this,
+            this.mAccelerometer,
+            SensorManager.SENSOR_DELAY_NORMAL
+        )
     }
+
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event != null) {
+            countBeforeUpdate--
+            val sensorValues = SensorValues(
+                event.values[0].roundToInt(),
+                event.values[1].roundToInt(),
+                event.values[2].roundToInt()
+            )
+
+            if (abs(sensorValues.x) > abs(stateValues.x)) {
+                ValueX.text = sensorValues.x.toString()
+                stateValues.x = sensorValues.x
+            }
+            if (abs(sensorValues.y) > abs(stateValues.y)) {
+                ValueY.text = sensorValues.y.toString()
+                stateValues.y = sensorValues.y
+            }
+            if (abs(sensorValues.z) > abs(stateValues.z)) {
+                ValueZ.text = sensorValues.z.toString()
+                stateValues.z = sensorValues.z
+            }
+            if (countBeforeUpdate == 0) {
+                when {
+                    stateValues.z >= gestureMinValue -> //[Turn on] gesture was performed
+                    {
+                        sensorView.text = "turn on"
+                        sendCommand("1")
+                    }
+                    stateValues.z <= -gestureMinValue -> //[Turn off] gesture was performed
+                    {
+                        sensorView.text = "turn off"
+                        sendCommand("0")
+                    }
+                    else -> sensorView.text = "NaN"
+                }
+
+                countBeforeUpdate = delay
+                ValueX.text = "0"
+                ValueY.text = "0"
+                ValueZ.text = "0"
+                stateValues = SensorValues(0, 0, 0)
+            }
+        }
+
+    }
+}
+
+data class SensorValues(var x: Int, var y: Int, var z: Int)
