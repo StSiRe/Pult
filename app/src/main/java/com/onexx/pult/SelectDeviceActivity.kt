@@ -69,11 +69,16 @@ class SelectDeviceActivity : AppCompatActivity() {
             AdapterView.OnItemClickListener { _, _, position, _ ->
                 val device: BluetoothDevice = list[position]
                 val address: String = device.address
-
+                selection_device_list.isEnabled = false
                 val intent = Intent(this, ControlActivity::class.java)
                 intent.putExtra(extraAddress, address)
                 startActivity(intent)
             }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        selection_device_list.isEnabled = true
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

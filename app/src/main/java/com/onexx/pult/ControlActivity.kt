@@ -61,12 +61,12 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun disconnect() {
-        if(isConnected) {
+        if (isConnected) {
             sendCommand("${'0' - 1}")
         }
         if (m_bluetoothSocket != null) {
             try {
-                if(m_bluetoothSocket!!.isConnected) {
+                if (m_bluetoothSocket!!.isConnected) {
                     m_bluetoothSocket!!.close()
                 }
                 m_bluetoothSocket = null
