@@ -34,8 +34,7 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.control_layout)
-        //TODO Uncomment and test bluetooth connection
-        address = intent.getStringExtra(SelectDeviceActivity.EXTRA_ADRESS)!!
+        address = intent.getStringExtra(SelectDeviceActivity.extraAddress)!!
 
         ConnectToDevice(this).execute()
 
@@ -45,7 +44,7 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
 
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         mAccelerometer = mSensorManager!!.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
-        sensorView.text = 1.toString()
+        sensorView.text = "NaN"
     }
 
     private fun sendCommand(input: String) {
@@ -62,10 +61,14 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun disconnect() {
-        sendCommand("${'0' - 1}")
+        if(isConnected) {
+            sendCommand("${'0' - 1}")
+        }
         if (m_bluetoothSocket != null) {
             try {
-                m_bluetoothSocket!!.close()
+                if(m_bluetoothSocket!!.isConnected) {
+                    m_bluetoothSocket!!.close()
+                }
                 m_bluetoothSocket = null
                 isConnected = false
             } catch (e: IOException) {
@@ -78,11 +81,7 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
     inner class ConnectToDevice(c: Context) : AsyncTask<Void, Void, String>() {
 
         private var connectSuccess: Boolean = true
-        private val context: Context
-
-        init {
-            this.context = c
-        }
+        private val context: Context = c
 
         override fun onPreExecute() {
             super.onPreExecute()
@@ -102,6 +101,7 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
                 } catch (e: IOException) {
                     connectSuccess = false
                     Log.i("Pult_debug", "Couldn't connect")
+                    break
                 }
             }
             return null
@@ -133,7 +133,7 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
         mSensorManager!!.registerListener(
             this,
             this.mAccelerometer,
-            SensorManager.SENSOR_DELAY_NORMAL
+            SensorManager.SENSOR_DELAY_NORMAL //SENSOR_DELAY_FASTEST
         )
     }
 
@@ -166,12 +166,12 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
                 when {
                     stateValues.z >= gestureMinValue -> //[Turn on] gesture was performed
                     {
-                        sensorView.text = "turn on"
+                        sensorView.text = "Turn on"
                         sendCommand("1")
                     }
                     stateValues.z <= -gestureMinValue -> //[Turn off] gesture was performed
                     {
-                        sensorView.text = "turn off"
+                        sensorView.text = "Turn off"
                         sendCommand("0")
                     }
                     else -> sensorView.text = "NaN"
