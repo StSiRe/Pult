@@ -36,7 +36,7 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
         setContentView(R.layout.control_layout)
         address = intent.getStringExtra(SelectDeviceActivity.extraAddress)!!
 
-        ConnectToDevice(this).execute()
+        //ConnectToDevice(this).execute()
 
         sendOneButton.setOnClickListener { sendCommand("1") }
         sendZeroButton.setOnClickListener { sendCommand("0") }
@@ -123,8 +123,8 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
 
     private var mSensorManager: SensorManager? = null
     private var mAccelerometer: Sensor? = null
-    private val delay = 20
-    private val gestureMinValue = 7
+    private val delay = 10
+    private val gestureMinValue = 5
     private var stateValues = SensorValues(0, 0, 0)
     private var countBeforeUpdate = delay
 
@@ -163,19 +163,18 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
                 stateValues.z = sensorValues.z
             }
             if (countBeforeUpdate == 0) {
-                when {
-                    stateValues.z >= gestureMinValue -> //[Turn on] gesture was performed
-                    {
-                        sensorView.text = "Turn on"
-                        sendCommand("1")
-                    }
-                    stateValues.z <= -gestureMinValue -> //[Turn off] gesture was performed
-                    {
-                        sensorView.text = "Turn off"
-                        sendCommand("0")
-                    }
-                    else -> sensorView.text = "NaN"
-                }
+                //if (stateValues.y == 0) return
+                if (stateValues.y >= gestureMinValue) //[Turn on] gesture was performed
+                {
+                    sensorView.text = "Turn on"
+                    sendCommand("1")
+                } else if (stateValues.y <= -gestureMinValue) //[Turn off] gesture was performed
+                {
+                    sensorView.text = "Turn off"
+                    sendCommand("0")
+                } else
+                    sensorView.text = "NaN"
+
 
                 countBeforeUpdate = delay
                 ValueX.text = "0"
