@@ -36,7 +36,7 @@ class ControlActivity : AppCompatActivity(), SensorEventListener {
         setContentView(R.layout.control_layout)
         address = intent.getStringExtra(SelectDeviceActivity.extraAddress)!!
 
-        //ConnectToDevice(this).execute()
+        ConnectToDevice(this).execute()
 
         sendOneButton.setOnClickListener { sendCommand("1") }
         sendZeroButton.setOnClickListener { sendCommand("0") }
